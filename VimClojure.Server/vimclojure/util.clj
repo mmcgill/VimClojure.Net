@@ -231,9 +231,17 @@
     (str-wrap (str prefix "/" (name thing)) \")
     (str-wrap (name thing) \")))
 
-(defmethod clj->vim Number
+(defmethod clj->vim ::Number
   [thing]
   (str thing))
+
+(derive System.Byte ::Number)
+(derive System.Int16 ::Number)
+(derive System.Int32 ::Number)
+(derive System.Int64 ::Number)
+(derive System.Single ::Number)
+(derive System.Double ::Number)
+(derive System.Decimal ::Number)
 
 (defmethod clj->vim nil
   [_]
