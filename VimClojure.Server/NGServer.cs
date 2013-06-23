@@ -1,4 +1,5 @@
-﻿using System;
+﻿using clojure.lang;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -10,6 +11,11 @@ namespace VimClojure.Server
 {
    class NGServer
    {
+      static NGServer() {
+         var require = RT.var( "clojure.core", "require" );
+         require.invoke( Symbol.create( "vimclojure.nails" ) );
+      }
+
       const int DefaultPort = 2113;
 
       static void Main( string[] args )
