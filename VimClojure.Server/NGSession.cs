@@ -1,4 +1,5 @@
-﻿using System;
+﻿using clojure.lang;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,11 @@ namespace VimClojure.Server
 {
    class NGSession
    {
+      static NGSession() {
+         var require = RT.var( "clojure.core", "require" );
+         require.invoke( Symbol.create( "vimclojure.nails" ) );
+      }
+
       private readonly NetworkStream _stream;
 
       public NGSession( NetworkStream stream )
@@ -34,7 +40,13 @@ namespace VimClojure.Server
             Console.WriteLine( "  {0}={1}", kv.Key, kv.Value );
          }
 
-         output.WriteLine( "Hello, world!" );
+         var nail = context.Args.First();
+         int slashIndex = nail.IndexOf( "/" );
+         var ns = slashIndex == -1 ? "vimclojure.nails" : nail.Substring( 0, slashIndex );
+         var func = slashIndex == -1 ? nail : nail.Substring( slashIndex + 1 );
+
+         var nailDriver = RT.var( ns, func );
+         nailDriver.invoke( context );
 
          exit.WriteLine( 0 );
          output.Flush();
