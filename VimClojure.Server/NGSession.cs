@@ -27,15 +27,10 @@ namespace VimClojure.Server
       {
          var context = NGContext.Parse( _stream );
 
+         Console.WriteLine();
          Console.WriteLine( "Command: {0}", context.Command );
          Console.WriteLine( "Working Directory: {0}", context.Cwd );
          Console.WriteLine( "Args: {0}", string.Join( " ", context.Args ) );
-         Console.WriteLine( "Environment:" );
-
-         foreach ( var kv in context.Environment )
-         {
-            Console.WriteLine( "  {0}={1}", kv.Key, kv.Value );
-         }
 
          var nail = context.Args.First();
          int slashIndex = nail.IndexOf( "/" );
