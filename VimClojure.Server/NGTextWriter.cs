@@ -13,8 +13,8 @@ namespace VimClojure.Server
 
       private readonly Stream _stream;
       private readonly byte[] _header;
-      private readonly MemoryStream _buffer;
-      private readonly StreamWriter _writer;
+      private MemoryStream _buffer;
+      private StreamWriter _writer;
 
       public override Encoding Encoding
       {
@@ -26,6 +26,11 @@ namespace VimClojure.Server
          _header = new byte[5];
          _header[4] = (byte) headerChar;
          _stream = stream;
+         ResetBuffer();
+      }
+
+      private void ResetBuffer()
+      {
          _buffer = new MemoryStream( BufferSize );
          _writer = new StreamWriter( _buffer );
       }
@@ -55,7 +60,7 @@ namespace VimClojure.Server
             _stream.Write( bufferArray, 0, (int)_buffer.Length );
             _stream.Flush();
 
-            _buffer.Seek( 0, SeekOrigin.Begin );
+            ResetBuffer();
          }
       }
 
