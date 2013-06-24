@@ -100,8 +100,6 @@
                          (nail ctx)
                          (catch Exception e
                            (print-stack-trace e))))]
-    (.Flush clj-out)
-    (.Flush clj-err)
     (set-stdin sys-in)
     (set-stdout sys-out)
     (set-stderr sys-err)
@@ -113,8 +111,7 @@
           output (.GetBytes Encoding/UTF8 output-str); TODO: handle encodings
           output (.GetChars Encoding/UTF8 output)]
       (println output-str)
-      (.Write (.Out ctx) output 0 (alength output)))
-    (.Flush (.Out ctx))))
+      (.Write (.Out ctx) output 0 (alength output)))))
 
 (defmacro defnail
   "Define a new Nail of the given name. The arguments is a command line
