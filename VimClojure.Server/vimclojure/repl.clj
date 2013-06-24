@@ -29,7 +29,8 @@
   (:import
     clojure.lang.Var
     clojure.lang.Compiler
-    clojure.lang.LineNumberingPushbackReader))
+    ;clojure.lang.LineNumberingPushbackReader
+    ))
 
 (def
   ^{:dynamic true :doc
@@ -72,7 +73,7 @@
     :test-out  nil
     :line      1
     :bindings  (-> (reduce add-binding {} bindable-vars)
-                 (assoc #'*compile-path* (System/getProperty
+                 #_(assoc #'*compile-path* (System/getProperty
                                            "clojure.compile.path"
                                            "classes")))}))
 

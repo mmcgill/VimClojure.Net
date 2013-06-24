@@ -29,7 +29,7 @@
 (defn str-cut
   "Cut n characters of the end of the string s."
   [string n]
-  (.substring string 0 (- (.length string) n)))
+  (.Substring string 0 (- (.Length string) n)))
 
 (defn str-wrap
   "Wrap the given string into the given separators."
@@ -102,7 +102,7 @@
                         sopt  (second spec)
                         sopt  (if (symbol? sopt) (name sopt) nil)
                         [lopt sopt type]
-                        (if (.endsWith lopt "?")
+                        (if (.EndsWith lopt "?")
                           [(str-cut lopt 1) sopt :flag]
                           [lopt             sopt :option])]
                     (vector (assoc opts lopt type)
@@ -128,8 +128,8 @@
             (throw (Exception.
                      "Unexpected command line arguments")))
 
-          (.startsWith arg "--")
-          (let [option (.substring arg 2)]
+          (.StartsWith arg "--")
+          (let [option (.Substring arg 2)]
             (condp = (options option)
               :flag   (recur (rest args) (assoc argmap option true))
               :option (if-let [value (second args)]
@@ -138,8 +138,8 @@
                                  (str "Missing value for option: " arg))))
               nil     (throw (Exception. (str "Unknown option: " option)))))
 
-          (.startsWith arg "-")
-          (let [option (.substring arg 1)]
+          (.StartsWith arg "-")
+          (let [option (.Substring arg 1)]
             (if-let [loption (soptions option)]
               (recur (cons (str "--" loption) (rest args)) argmap)
               (throw (Exception. (str "Unknown option: " option)))))
@@ -169,7 +169,7 @@
                         (cond
                           (not (vector? spec)) [spec nil]
 
-                          (-> spec first name (.endsWith "?"))
+                          (-> spec first name (.EndsWith "?"))
                           (vector (-> spec first name (str-cut 1) symbol) false)
 
                           (-> spec second symbol?)
@@ -252,130 +252,128 @@
   (when (.isBound the-var)
     (var-get the-var)))
 
-(defn decide-completion-in
-  [nspace prefix base]
-  (let [nom (name prefix)]
-    (if (pos? (count nom))
-      (cond
-        (or (contains? (set (map ns-name (all-ns))) prefix)
-            (contains? (ns-aliases nspace) prefix))
-        [:local-var]
+;(defn decide-completion-in
+;  [nspace prefix base]
+;  (let [nom (name prefix)]
+;    (if (pos? (count nom))
+;      (cond
+;        (or (contains? (set (map ns-name (all-ns))) prefix)
+;            (contains? (ns-aliases nspace) prefix))
+;        [:local-var]
+;
+;        (or (Char/IsUpper (char (first nom)))
+;            (instance? Class (ns-resolve nspace prefix)))
+;        [:static-field]
+;
+;        :else (throw (Exception. "Cannot determine type of prefix")))
+;      (cond
+;        (Char/IsUpper (char (first base))) [:import]
+;        (< -1 (.IndexOf base (int \.)))             [:namespace]
+;        :else [:full-var :alias :namespace]))))
 
-        (or (Character/isUpperCase (char (first nom)))
-            (try
-              (instance? Class (ns-resolve nspace prefix))
-              (catch ClassNotFoundException _ false)))
-        [:static-field]
+;(defn- type-of-completion
+;  [thing]
+;  (cond
+;    (instance? clojure.lang.Namespace thing)   "n"
+;    (instance? java.lang.reflect.Field thing)  "S"
+;    (instance? java.lang.reflect.Method thing) "M"
+;    (class? thing)        "c"
+;    (coll? thing)         (recur (first thing))
+;    (:macro (meta thing)) "m"
+;    :else                 (let [value (safe-var-get thing)]
+;                            (cond
+;                              (instance? clojure.lang.MultiFn value) "f"
+;                              (fn? value) "f"
+;                              :else       "v"))))
 
-        :else (throw (Exception. "Cannot determine type of prefix")))
-      (cond
-        (Character/isUpperCase (char (first base))) [:import]
-        (< -1 (.indexOf base (int \.)))             [:namespace]
-        :else [:full-var :alias :namespace]))))
+;(defmulti make-completion-item
+;  "Create a completion item for Vim's popup-menu."
+;  (fn [_ the-thing] (type-of-completion the-thing)))
 
-(defn- type-of-completion
-  [thing]
-  (cond
-    (instance? clojure.lang.Namespace thing)   "n"
-    (instance? java.lang.reflect.Field thing)  "S"
-    (instance? java.lang.reflect.Method thing) "M"
-    (class? thing)        "c"
-    (coll? thing)         (recur (first thing))
-    (:macro (meta thing)) "m"
-    :else                 (let [value (safe-var-get thing)]
-                            (cond
-                              (instance? clojure.lang.MultiFn value) "f"
-                              (fn? value) "f"
-                              :else       "v"))))
-
-(defmulti make-completion-item
-  "Create a completion item for Vim's popup-menu."
-  (fn [_ the-thing] (type-of-completion the-thing)))
-
-(defmethod make-completion-item "n"
-  [the-name the-space]
-  (let [docs (-> the-space meta :doc)
-        info (str " " the-name \newline
-                  (when docs (str \newline docs)))]
-    (hash-map "word" the-name
-              "kind" "n"
-              "menu" ""
-              "info" info)))
-
-(defmethod make-completion-item "c"
-  [the-name _]
-  (hash-map "word" the-name
-            "kind" "c"
-            "menu" ""
-            "info" ""))
-
-(defmethod make-completion-item "M"
-  [the-name the-methods]
-  (let [nam      (name (read-string the-name))
-        rtypes   (map #(-> % .getReturnType .getSimpleName) the-methods)
-        arglists (map (fn [m]
-                        (let [types (.getParameterTypes m)]
-                          (vec (map #(.getSimpleName %) types))))
-                      the-methods)
-        info     (apply str "  " the-name \newline \newline
-                        (map #(str "  " %1 " " nam
-                                   (str-wrap (str-cat %2 ", ") \( \))
-                                   \; \newline)
-                             rtypes arglists))]
-    (hash-map "word" the-name
-              "kind" "M"
-              "menu" (print-str arglists)
-              "info" info)))
-
-(defmethod make-completion-item "S"
-  [the-name [the-field]]
-  (let [nam  (name (read-string the-name))
-        menu (-> the-field .getType .getSimpleName)
-        info (str "  " the-name \newline \newline
-                  "  " menu " " the-name \newline)]
-    (hash-map "word" the-name
-              "kind" "S"
-              "menu" menu
-              "info" info)))
-
-(defmethod make-completion-item "v"
-  [the-name the-var]
-  (let [info (str "  " the-name \newline)
-        info (if-let [docstring (-> the-var meta :doc)]
-               (str info \newline "  " docstring)
-               info)]
-    (hash-map "word" the-name
-              "kind" "v"
-              "menu" (pr-str (try
-                               (type @the-var)
-                               (catch IllegalStateException _
-                                 "<UNBOUND>")))
-              "info" info)))
-
-(defn- make-completion-item-fm
-  [the-name the-fn typ]
-  (let [info     (str "  " the-name \newline)
-        metadata (meta the-fn)
-        arglists (:arglists metadata)
-        info     (if arglists
-                   (reduce #(str %1 "  " (prn-str (cons (symbol the-name) %2)))
-                           (str info \newline) arglists)
-                   info)
-        info     (if-let [docstring (:doc metadata)]
-                   (str info \newline "  " docstring)
-                   info)]
-    (hash-map "word" the-name
-              "kind" typ
-              "menu" (pr-str arglists)
-              "info" info)))
-
-(defmethod make-completion-item "f"
-  [the-name the-fn]
-  (make-completion-item-fm the-name the-fn "f"))
-
-(defmethod make-completion-item "m"
-  [the-name the-fn]
-  (make-completion-item-fm the-name the-fn "m"))
+;(defmethod make-completion-item "n"
+;  [the-name the-space]
+;  (let [docs (-> the-space meta :doc)
+;        info (str " " the-name \newline
+;                  (when docs (str \newline docs)))]
+;    (hash-map "word" the-name
+;              "kind" "n"
+;              "menu" ""
+;              "info" info)))
+;
+;(defmethod make-completion-item "c"
+;  [the-name _]
+;  (hash-map "word" the-name
+;            "kind" "c"
+;            "menu" ""
+;            "info" ""))
+;
+;(defmethod make-completion-item "M"
+;  [the-name the-methods]
+;  (let [nam      (name (read-string the-name))
+;        rtypes   (map #(-> % .getReturnType .getSimpleName) the-methods)
+;        arglists (map (fn [m]
+;                        (let [types (.getParameterTypes m)]
+;                          (vec (map #(.getSimpleName %) types))))
+;                      the-methods)
+;        info     (apply str "  " the-name \newline \newline
+;                        (map #(str "  " %1 " " nam
+;                                   (str-wrap (str-cat %2 ", ") \( \))
+;                                   \; \newline)
+;                             rtypes arglists))]
+;    (hash-map "word" the-name
+;              "kind" "M"
+;              "menu" (print-str arglists)
+;              "info" info)))
+;
+;(defmethod make-completion-item "S"
+;  [the-name [the-field]]
+;  (let [nam  (name (read-string the-name))
+;        menu (-> the-field .getType .getSimpleName)
+;        info (str "  " the-name \newline \newline
+;                  "  " menu " " the-name \newline)]
+;    (hash-map "word" the-name
+;              "kind" "S"
+;              "menu" menu
+;              "info" info)))
+;
+;(defmethod make-completion-item "v"
+;  [the-name the-var]
+;  (let [info (str "  " the-name \newline)
+;        info (if-let [docstring (-> the-var meta :doc)]
+;               (str info \newline "  " docstring)
+;               info)]
+;    (hash-map "word" the-name
+;              "kind" "v"
+;              "menu" (pr-str (try
+;                               (type @the-var)
+;                               (catch IllegalStateException _
+;                                 "<UNBOUND>")))
+;              "info" info)))
+;
+;(defn- make-completion-item-fm
+;  [the-name the-fn typ]
+;  (let [info     (str "  " the-name \newline)
+;        metadata (meta the-fn)
+;        arglists (:arglists metadata)
+;        info     (if arglists
+;                   (reduce #(str %1 "  " (prn-str (cons (symbol the-name) %2)))
+;                           (str info \newline) arglists)
+;                   info)
+;        info     (if-let [docstring (:doc metadata)]
+;                   (str info \newline "  " docstring)
+;                   info)]
+;    (hash-map "word" the-name
+;              "kind" typ
+;              "menu" (pr-str arglists)
+;              "info" info)))
+;
+;(defmethod make-completion-item "f"
+;  [the-name the-fn]
+;  (make-completion-item-fm the-name the-fn "f"))
+;
+;(defmethod make-completion-item "m"
+;  [the-name the-fn]
+;  (make-completion-item-fm the-name the-fn "m"))
 
 ; Namespace helpers
 (defn resolve-and-load-namespace
@@ -436,5 +434,7 @@
 (try
   (load "optional/clj_stacktrace")
   (catch Exception exc
-    (when-not (re-find #"Could not locate clj_stacktrace/repl__init.class or clj_stacktrace/repl.clj on classpath" (str exc))
+    (when-not (re-find #"Could not locate clj_stacktrace.repl.clj.dll" (str exc))
       (throw exc))))
+
+
