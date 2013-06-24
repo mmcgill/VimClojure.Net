@@ -25,16 +25,13 @@ namespace VimClojure.Server
 
       public void Process()
       {
-         var output = new NGTextWriter( NGConstants.CHUNKTYPE_STDOUT, _stream );
-         var error = new NGTextWriter( NGConstants.CHUNKTYPE_STDERR, _stream );
-         var exit = new NGTextWriter( NGConstants.CHUNKTYPE_EXIT, _stream );
-
          var context = NGContext.Parse( _stream );
 
          Console.WriteLine( "Command: {0}", context.Command );
          Console.WriteLine( "Working Directory: {0}", context.Cwd );
          Console.WriteLine( "Args: {0}", string.Join( " ", context.Args ) );
          Console.WriteLine( "Environment:" );
+
          foreach ( var kv in context.Environment )
          {
             Console.WriteLine( "  {0}={1}", kv.Key, kv.Value );
@@ -48,10 +45,11 @@ namespace VimClojure.Server
          var nailDriver = RT.var( ns, func );
          nailDriver.invoke( context );
 
-         exit.WriteLine( 0 );
-         output.Flush();
-         error.Flush();
-         exit.Flush();
+         context.Exit.WriteLine( 0 );
+
+         context.Out.Flush();
+         context.Error.Flush();
+         context.Exit.Flush();
       }
    }
 }

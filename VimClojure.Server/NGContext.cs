@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace VimClojure.Server
 {
-   class NGContext
+   public class NGContext
    {
       private readonly List<string> _args = new List<string>();
 
@@ -21,9 +21,21 @@ namespace VimClojure.Server
 
       public IEnumerable<KeyValuePair<string, string>> Environment { get { return _environment; } }
 
+      public TextReader In { get; private set; }
+
+      public TextWriter Out { get; private set; }
+
+      public TextWriter Error { get; private set; }
+
+      public TextWriter Exit { get; private set; }
+
       public static NGContext Parse( Stream stream )
       {
          var ctx = new NGContext();
+         ctx.In = new NGTextReader( stream );
+         ctx.Out = new NGTextWriter( NGConstants.CHUNKTYPE_STDOUT, stream );
+         ctx.Error = new NGTextWriter( NGConstants.CHUNKTYPE_STDERR, stream );
+         ctx.Exit = new NGTextWriter( NGConstants.CHUNKTYPE_EXIT, stream );
 
          while ( ctx.Command == null )
          {
