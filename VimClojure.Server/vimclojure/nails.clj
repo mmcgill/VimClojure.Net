@@ -22,7 +22,7 @@
 
 (ns vimclojure.nails
   (:require
-    ;[vimclojure.repl :as repl]
+    [vimclojure.repl :as repl]
     [vimclojure.util :as util]
     [vimclojure.backend :as backend]
     clojure.set
@@ -245,30 +245,30 @@
         expand
         util/pretty-print-code))))
 
-;(defnail Repl
-;  "Usage: ng vimclojure.nails.Repl [options]"
-;  [[start?  s "Start a new Repl."]
-;   [stop?   S "Stop the Repl of the given id."]
-;   [run?    r "Run the input in the Repl context of the given id."]
-;   [id      i "The id of the repl to act on." "-1"]
-;   [nspace  n "Change to namespace before executing the input." ""]
-;   [file    f "The filename to be set." "REPL"]
-;   [line    l "The initial line to be set." "0"]
-;   [ignore? I "Ignore the command with respect to *1, *2, *3"]]
-;  (let [id     (Integer/parseInt id)
-;        line   (Integer/parseInt line)
-;        nspace (when (not= nspace "")
-;                 (util/resolve-and-load-namespace nspace))]
-;    (cond
-;      start {:id (repl/start nspace)}
-;      stop  (repl/stop id)
-;      run   (repl/run id nspace file line ignore))))
-;
-;(defnail ReplNamespace
-;  "Usage: ng vimclojure.nails.Repl [options]"
-;  [[id i "The id of the repl to act on."]]
-;  (let [id (Integer/parseInt id)]
-;    (get (get @repl/*repls* id {:ns "user"}) :ns)))
+(defnail Repl
+  "Usage: ng vimclojure.nails.Repl [options]"
+  [[start?  s "Start a new Repl."]
+   [stop?   S "Stop the Repl of the given id."]
+   [run?    r "Run the input in the Repl context of the given id."]
+   [id      i "The id of the repl to act on." "-1"]
+   [nspace  n "Change to namespace before executing the input." ""]
+   [file    f "The filename to be set." "REPL"]
+   [line    l "The initial line to be set." "0"]
+   [ignore? I "Ignore the command with respect to *1, *2, *3"]]
+  (let [id     (Int32/Parse id)
+        line   (Int32/Parse line)
+        nspace (when (not= nspace "")
+                 (util/resolve-and-load-namespace nspace))]
+    (cond
+      start {:id (repl/start nspace)}
+      stop  (repl/stop id)
+      run   (repl/run id nspace file line ignore))))
+
+(defnail ReplNamespace
+  "Usage: ng vimclojure.nails.Repl [options]"
+  [[id i "The id of the repl to act on."]]
+  (let [id (Int32/Parse id)]
+    (get (get @repl/*repls* id {:ns "user"}) :ns)))
 
 (defnail CheckSyntax
   "Usage: ng vimclojure.nails.CheckSyntax"

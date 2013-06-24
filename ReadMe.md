@@ -6,8 +6,8 @@ First, some disclaimers:
 
 **This is a work-in-progress.**
 
-Lots of functionality (including REPL!) doesn't work yet, and what
-does work has barely been tested. This isn't even Alpha quality yet.
+Some functionality doesn't work yet, and what
+does work hasn't really been tested. This isn't even Alpha quality yet.
 When it is, I'll build some binaries.
 
 **This project was deprecated before I started it.**

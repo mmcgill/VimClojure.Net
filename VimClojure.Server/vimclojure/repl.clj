@@ -29,7 +29,7 @@
   (:import
     clojure.lang.Var
     clojure.lang.Compiler
-    ;clojure.lang.LineNumberingPushbackReader
+    clojure.lang.LineNumberingTextReader
     ))
 
 (def
@@ -96,16 +96,22 @@
 (defn root-cause
   "Drill down to the real root cause of the given Exception."
   [cause]
-  (if-let [cause (.getCause cause)]
+  (if-let [cause (.InnerException cause)]
     (recur cause)
     cause))
 
-(defn make-reader
-  "Create a proxy for a LineNumberingsPushbackReader, which delegates
-  everything, but allows to specify an offset as initial line."
-  [reader offset]
-  (proxy [LineNumberingPushbackReader] [reader]
-    (getLineNumber [] (+ offset (proxy-super getLineNumber)))))
+; ClojureCLR doesn't know how to proxy properties at this point,
+; and LineNumber is a property of LineNumberingTextReader.
+; Since the LineNumberingTextReader's LineNumber property isn't
+; virtual, we can't override its behavior by creating a subclass.
+; I'm not sure how to port the code below to ClojureCLR.
+
+;(defn make-reader
+;  "Create a proxy for a LineNumberingsPushbackReader, which delegates
+;  everything, but allows to specify an offset as initial line."
+;  [reader offset]
+;  (proxy [LineNumberingTextReader] [reader]
+;    (get_LineNumber [] (+ offset (proxy-super get_LineNumber)))))
 
 (defn with-repl*
   "Calls thunk in the context of the Repl with the given id. id may be -1
@@ -117,18 +123,20 @@
                        (do
                          (swap! *repls* dissoc id)
                          the-repl)
-                       (throw (Exception. (str "No Repl of that id: " id)))))
+                       (throw (InvalidOperationException. 
+                                (str "No Repl of that id: " id)))))
                    (make-repl -1))
         line     (if (= line 0)
                    (the-repl :line)
                    line)]
     (with-bindings
       (merge (:bindings the-repl)
-             ; #64: Unbox to ensure int.
-             {Compiler/LINE        (Integer. (.intValue line))
-              Compiler/SOURCE      (.getName (java.io.File. file))
-              Compiler/SOURCE_PATH file
-              #'*in*               (make-reader *in* line)
+             {;Compiler/LINE        line
+              ; ClojureCLR's Compiler class doesn't give us a symbol or publicly
+              ; accessible field for the current line.
+              #'*source-path*      (.Name (System.IO.FileInfo. file))
+              #'*file*             file
+              ;#'*in*               (make-reader *in* line)
               #'*ns*               (if nspace nspace (:ns the-repl))
               #'clojure.test/*test-out* (if-let [test-out (the-repl :test-out)]
                                           test-out
@@ -143,7 +151,7 @@
                     :test-out  (let [test-out clojure.test/*test-out*]
                                  (when-not (identical? test-out *out*)
                                    test-out))
-                    :line      (dec (.getLineNumber *in*))
+                    :line      (dec (.LineNumber *in*))
                     :bindings  (reduce add-binding {} bindable-vars)})))))))
 
 (defmacro with-repl
@@ -167,7 +175,7 @@
             (set! *3 *2)
             (set! *2 *1)
             (set! *1 result))))
-      (catch Throwable e
+      (catch Exception e
         (binding [*out* *err*]
           (if (= id -1)
             (pretty-print-causetrace e)
