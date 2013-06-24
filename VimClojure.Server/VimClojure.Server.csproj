@@ -60,6 +60,7 @@
     <Compile Include="NGContext.cs" />
     <Compile Include="NGServer.cs" />
     <Compile Include="NGSession.cs" />
+    <Compile Include="NGTextReader.cs" />
     <Compile Include="NGTextWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

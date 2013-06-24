@@ -8,6 +8,10 @@ namespace VimClojure.Server
 {
    static class NGConstants
    {
+      public const char CHUNKTYPE_STDIN = '0';
+
+      public const char CHUNKTYPE_STDIN_EOF = '.';
+
       public const char CHUNKTYPE_STDOUT = '1';
 
       public const char CHUNKTYPE_STDERR = '2';
